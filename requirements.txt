@@ -1,0 +1,10 @@
+# QuizRoom - Online Test Platform
+# Copyright © 2026 Abduazim
+# Author: Abduazim
+# Email: fanwaguriservant@gmail.com
+# License: All rights reserved
+
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+jinja2==3.1.2
