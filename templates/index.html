@@ -1,0 +1,466 @@
+<!--
+QuizRoom - Online Test Platform
+Copyright © 2026 Abduazim
+Author: Abduazim
+Email: fanwaguriservant@gmail.com
+License: All rights reserved
+-->
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QuizRoom — Test Platformasi</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    :root {
+      --ink: #0d0d0d;
+      --paper: #f5f0e8;
+      --accent: #ff4d00;
+      --accent2: #0047ff;
+      --muted: #6b6660;
+    }
+    .tag:hover {
+     border-color: #ff6633;
+     color: #ff6633;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--paper);
+      font-family: 'Syne', sans-serif;
+      color: var(--ink);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    .mono { font-family: 'Space Mono', monospace; }
+
+    /* Grid bg */
+    .bg-grid {
+      background-image:
+        linear-gradient(rgba(13,13,13,0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(13,13,13,0.06) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    /* Input */
+    .field {
+      border: 2px solid var(--ink);
+      background: transparent;
+      font-family: 'Space Mono', monospace;
+      font-size: 1.5rem;
+      letter-spacing: 0.3em;
+      text-align: center;
+      text-transform: uppercase;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+    }
+    .field:focus {
+      border-color: var(--accent);
+      box-shadow: 4px 4px 0 var(--accent);
+    }
+    .field::placeholder { color: #bbb; letter-spacing: 0.2em; }
+
+    /* Brutalist button */
+    .btn-brut {
+      border: 2px solid var(--ink);
+      background: var(--ink);
+      color: var(--paper);
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      position: relative;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .btn-brut:hover {
+      transform: translate(-3px, -3px);
+      box-shadow: 5px 5px 0 var(--accent);
+    }
+    .btn-brut:active { transform: translate(0, 0); box-shadow: none; }
+    .btn-brut:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    /* Diagonal stripe accent */
+    .stripe {
+      background: repeating-linear-gradient(
+        -45deg,
+        var(--accent),
+        var(--accent) 4px,
+        transparent 4px,
+        transparent 16px
+      );
+    }
+
+    /* Card */
+    .card {
+      border: 2px solid var(--ink);
+      background: white;
+      box-shadow: 6px 6px 0 var(--ink);
+    }
+
+    /* Tag */
+    .tag {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      border: 1.5px solid currentColor;
+      padding: 2px 8px;
+    }
+
+    /* Fade-in */
+    @keyframes fadeUp {
+      from { opacity:0; transform:translateY(24px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    .fade-up { animation: fadeUp 0.55s cubic-bezier(.22,1,.36,1) both; }
+    .delay-1 { animation-delay: 0.1s; }
+    .delay-2 { animation-delay: 0.2s; }
+    .delay-3 { animation-delay: 0.35s; }
+
+    /* Quiz area */
+    #quiz-area { display: none; }
+    #result-area { display: none; }
+
+    /* Option buttons */
+    .opt-btn {
+      border: 2px solid var(--ink);
+      background: white;
+      text-align: left;
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
+      position: relative;
+    }
+    .opt-btn:hover:not(.selected):not(.disabled) {
+      background: #f5f0e8;
+      transform: translate(-2px, -2px);
+      box-shadow: 4px 4px 0 var(--ink);
+    }
+    .opt-btn.selected {
+      background: var(--ink);
+      color: var(--paper);
+      box-shadow: 4px 4px 0 var(--accent2);
+    }
+    .opt-letter {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+
+    /* Progress bar */
+    #progress-bar {
+      height: 4px;
+      background: var(--ink);
+      transition: width 0.4s cubic-bezier(.22,1,.36,1);
+    }
+
+    /* Score ring */
+    .score-ring {
+      position: relative;
+      display: inline-block;
+      width: 140px;
+      height: 140px;
+    }
+    .score-ring svg {
+      transform: rotate(-90deg);
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    .score-text {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+<body class="bg-grid min-h-screen">
+
+  <!-- Topbar -->
+  <header class="border-b-2 border-ink" style="border-color:var(--ink)">
+    <div class="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 stripe rounded-sm"></div>
+        <span class="font-black text-xl tracking-tight" style="font-family:'Syne',sans-serif">QUIZ<span style="color:var(--accent)">ROOM</span></span>
+      </div>
+      <span class="tag" style="color:var(--muted)">Talaba Portali</span>
+    </div>
+  </header>
+
+  <!-- ===== LANDING ===== -->
+  <section id="landing-area">
+    <div class="max-w-lg mx-auto px-6 pt-20 pb-12 text-center">
+
+      <!-- Big heading -->
+      <div class="fade-up mb-2">
+        <span class="tag" style="color:var(--accent)">Test platformasi</span>
+      </div>
+      <h1 class="fade-up delay-1 mt-4 mb-3 leading-none" style="font-size:clamp(2.5rem,8vw,4rem);font-weight:800;letter-spacing:-0.02em">
+        Testga<br/>Qo'shiling
+      </h1>
+      <p class="fade-up delay-2 mb-10 text-base" style="color:var(--muted);font-family:'Space Mono',monospace;font-size:0.82rem">
+        Xona kodini kiriting va boshlang
+      </p>
+
+      <!-- Card -->
+      <div class="card p-8 fade-up delay-3 text-left">
+        <label class="block mb-2 font-bold text-sm tracking-widest uppercase" style="color:var(--muted)">Ismingiz</label>
+        <input id="student-name" class="field w-full px-4 py-3 mb-5 rounded-none text-base" style="letter-spacing:0.05em;text-align:left;font-size:1rem" placeholder="Ism Familiya" />
+
+        <label class="block mb-2 font-bold text-sm tracking-widest uppercase" style="color:var(--muted)">Xona Kodi</label>
+        <input id="room-code" class="field w-full px-4 py-3 mb-6 rounded-none" maxlength="6" placeholder="A1B2C3" />
+
+        <button onclick="enterRoom()" class="btn-brut w-full py-4 rounded-none text-sm tracking-widest">
+          ▶ Testni Boshlash
+        </button>
+
+        <div id="entry-error" class="mt-4 text-sm font-bold hidden" style="color:var(--accent);font-family:'Space Mono',monospace"></div>
+      </div>
+
+      <!-- Bottom note -->
+      <p class="mt-8 text-xs mono" style="color:var(--muted)">
+        Admin? <a href="/admin" class="underline font-bold" style="color:var(--accent2)">Admin panelga o'ting →</a>
+      </p>
+    </div>
+  </section>
+
+  <!-- ===== QUIZ ===== -->
+  <section id="quiz-area">
+    <!-- Progress -->
+    <div class="w-full" style="background:#e0dbd1;height:4px">
+      <div id="progress-bar" style="width:0%"></div>
+    </div>
+
+    <div class="max-w-2xl mx-auto px-6 pt-10 pb-20">
+      <!-- Meta row -->
+      <div class="flex items-center justify-between mb-8">
+        <span id="q-counter" class="mono text-xs font-bold tracking-widest uppercase" style="color:var(--muted)"></span>
+        <span id="room-name-badge" class="tag" style="color:var(--accent2)"></span>
+      </div>
+
+      <!-- Question -->
+      <div class="card p-6 mb-6 fade-up" id="q-card">
+        <p class="text-xs mono mb-4 font-bold" style="color:var(--muted)">SAVOL</p>
+        <p id="q-text" class="text-xl font-bold leading-snug" style="font-family:'Syne',sans-serif"></p>
+      </div>
+
+      <!-- Options -->
+      <div id="options-grid" class="grid gap-3 mb-8"></div>
+
+      <!-- Nav -->
+      <div class="flex items-center justify-between">
+        <button onclick="prevQ()" id="btn-prev" class="btn-brut px-6 py-3 rounded-none text-xs tracking-widest">← Ortga</button>
+        <button onclick="nextQ()" id="btn-next" class="btn-brut px-6 py-3 rounded-none text-xs tracking-widest">Keyingi →</button>
+        <button onclick="submitQuiz()" id="btn-submit" class="btn-brut px-6 py-3 rounded-none text-xs tracking-widest hidden" style="background:var(--accent);border-color:var(--accent)">✓ Yakunlash</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== RESULT ===== -->
+  <section id="result-area">
+    <div class="max-w-lg mx-auto px-6 pt-16 pb-20 text-center">
+      <div class="tag mb-6 inline-block" style="color:var(--accent)">Natija</div>
+
+      <div class="card p-10 mb-6">
+        <!-- Score ring -->
+        <div class="score-ring mx-auto mb-6" style="width:140px;height:140px">
+          <svg width="140" height="140" viewBox="0 0 140 140">
+            <circle cx="70" cy="70" r="58" fill="none" stroke="#e0dbd1" stroke-width="10"/>
+            <circle id="ring-fg" cx="70" cy="70" r="58" fill="none" stroke="var(--accent)" stroke-width="10"
+              stroke-dasharray="364" stroke-dashoffset="364" stroke-linecap="round"
+              style="transition:stroke-dashoffset 1.2s cubic-bezier(.22,1,.36,1)"/>
+          </svg>
+          <div class="score-text">
+            <span id="result-score" class="font-black text-3xl" style="font-family:'Space Mono',monospace;line-height:1"></span>
+            <span class="text-xs mono mt-1" style="color:var(--muted)">ball</span>
+          </div>
+        </div>
+
+        <h2 id="result-msg" class="text-2xl font-black mb-2"></h2>
+        <p id="result-sub" class="text-sm mono" style="color:var(--muted)"></p>
+      </div>
+
+      <button onclick="resetAll()" class="btn-brut w-full py-4 rounded-none text-sm tracking-widest">
+        ↩ Qaytadan urinish
+      </button>
+    </div>
+  </section>
+
+<!-- FOOTER / CREATOR CONTACT -->
+<footer style="border-top:2px solid var(--ink);background:#f9f8f6;margin-top:40px">
+  <div class="max-w-lg mx-auto px-6 py-12 text-center">
+    
+    <p class="mono text-xs mb-6"
+       style="color:var(--muted);letter-spacing:0.15em;text-transform:uppercase">
+      Ishlab chiqaruvchi bilan bog'lanish
+    </p>
+
+    <div style="display:flex;flex-direction:column;gap:8px;align-items:center;margin-bottom:16px">
+      
+      <a href="mailto:fanwaguriservant@gmail.com"
+         class="tag"
+         style="color:var(--accent2);border-color:var(--accent2);cursor:pointer;text-decoration:none;display:inline-block;padding:6px 12px">
+        📧 fanwaguriservant@gmail.com
+      </a>
+
+    </div>
+
+    <p class="text-xs"
+       style="color:var(--muted);font-family:'Space Mono',monospace">
+      © 2026 Abduazim • <span style="color:var(--accent)">QuizRoom</span>
+    </p>
+
+    <p class="text-xs mt-2"
+       style="color:#999;font-size:0.7rem">
+      Barcha huquqlar muallif himoyasiga olingan • All Rights Reserved
+    </p>
+
+  </div>
+</footer>
+
+  <script>
+    const LETTERS = ['A','B','C','D','E','F'];
+    let questions = [], answers = [], currentQ = 0, roomName = '';
+
+    async function enterRoom() {
+      const name = document.getElementById('student-name').value.trim();
+      const code = document.getElementById('room-code').value.trim().toUpperCase();
+      const errEl = document.getElementById('entry-error');
+
+      if (!name) { showErr(errEl, '⚠ Ismingizni kiriting'); return; }
+      if (code.length < 2) { showErr(errEl, '⚠ Xona kodini kiriting'); return; }
+
+      errEl.classList.add('hidden');
+
+      try {
+        const res = await fetch(`/api/room/${code}`);
+        const data = await res.json();
+
+        if (data.error) { showErr(errEl, '⚠ ' + data.error); return; }
+        if (data.status !== 'active') { showErr(errEl, '⚠ Bu xona hozir faol emas'); return; }
+
+        questions = data.questions;
+        answers = new Array(questions.length).fill(-1);
+        roomName = data.name;
+        currentQ = 0;
+
+        document.getElementById('landing-area').style.display = 'none';
+        document.getElementById('quiz-area').style.display = 'block';
+
+        window._studentName = name;
+        window._roomCode = code;
+        renderQ();
+      } catch(e) {
+        showErr(errEl, '⚠ Server bilan bog\'lanishda xato');
+      }
+    }
+
+    function showErr(el, msg) {
+      el.textContent = msg;
+      el.classList.remove('hidden');
+    }
+
+    function renderQ() {
+      const q = questions[currentQ];
+      document.getElementById('q-counter').textContent = `Savol ${currentQ+1} / ${questions.length}`;
+      document.getElementById('room-name-badge').textContent = roomName;
+      document.getElementById('q-text').textContent = q.q;
+
+      // Progress
+      document.getElementById('progress-bar').style.width = `${((currentQ+1)/questions.length)*100}%`;
+
+      // Options
+      const grid = document.getElementById('options-grid');
+      grid.innerHTML = '';
+      q.options.forEach((opt, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'opt-btn w-full px-5 py-4 rounded-none flex items-start gap-4 ' + (answers[currentQ] === i ? 'selected' : '');
+        btn.innerHTML = `<span class="opt-letter shrink-0 mt-0.5">${LETTERS[i]}</span><span class="text-sm font-semibold leading-snug">${opt}</span>`;
+        btn.onclick = () => selectAnswer(i);
+        grid.appendChild(btn);
+      });
+
+      // Nav buttons
+      document.getElementById('btn-prev').style.display = currentQ === 0 ? 'none' : '';
+      const isLast = currentQ === questions.length - 1;
+      document.getElementById('btn-next').classList.toggle('hidden', isLast);
+      document.getElementById('btn-submit').classList.toggle('hidden', !isLast);
+    }
+
+    function selectAnswer(i) {
+      answers[currentQ] = i;
+      renderQ();
+    }
+
+    function nextQ() {
+      if (currentQ < questions.length - 1) { currentQ++; renderQ(); }
+    }
+
+    function prevQ() {
+      if (currentQ > 0) { currentQ--; renderQ(); }
+    }
+
+    async function submitQuiz() {
+      const unanswered = answers.filter(a => a === -1).length;
+      if (unanswered > 0 && !confirm(`${unanswered} ta savol javobsiz. Baribir yuborasizmi?`)) return;
+
+      try {
+        const res = await fetch(`/api/submit/${window._roomCode}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_name: window._studentName, answers })
+        });
+        const data = await res.json();
+        if (data.error) { alert(data.error); return; }
+        showResult(data.score, data.total);
+      } catch(e) {
+        alert('Yuborishda xato yuz berdi');
+      }
+    }
+
+    function showResult(score, total) {
+      document.getElementById('quiz-area').style.display = 'none';
+      document.getElementById('result-area').style.display = 'block';
+
+      const pct = total > 0 ? score / total : 0;
+      document.getElementById('result-score').textContent = `${score}/${total}`;
+      document.getElementById('result-sub').textContent = `${Math.round(pct*100)}% to'g'ri javob`;
+
+      const msg = pct >= 0.85 ? '🏆 Ajoyib!' : pct >= 0.6 ? '👍 Yaxshi!' : '📚 Harakat qiling';
+      document.getElementById('result-msg').textContent = msg;
+
+      // Animate ring
+      const circumference = 364;
+      setTimeout(() => {
+        document.getElementById('ring-fg').style.strokeDashoffset = circumference * (1 - pct);
+      }, 200);
+    }
+
+    function resetAll() {
+      document.getElementById('result-area').style.display = 'none';
+      document.getElementById('landing-area').style.display = 'block';
+      document.getElementById('room-code').value = '';
+      document.getElementById('student-name').value = '';
+    }
+
+    // Enter key shortcuts
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && document.getElementById('landing-area').style.display !== 'none') enterRoom();
+    });
+  </script>
+</body>
+</html>

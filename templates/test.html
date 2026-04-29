@@ -1,0 +1,588 @@
+<!--
+QuizRoom - Online Test Platform - Admin Panel
+Copyright © 2026 Abduazim
+Author: Abduazim
+Email: fanwaguriservant@gmail.com
+License: All rights reserved
+-->
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QuizRoom — Admin Panel</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #0d0d0d;
+      --paper: #f5f0e8;
+      --accent: #ff4d00;
+      --accent2: #0047ff;
+      --green: #00a550;
+      --muted: #6b6660;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: #111;
+      font-family: 'Syne', sans-serif;
+      color: #f5f0e8;
+      min-height: 100vh;
+    }
+    .mono { font-family: 'Space Mono', monospace; }
+
+    /* Scanline bg texture */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 4px
+      );
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .stripe-h {
+      background: repeating-linear-gradient(
+        -45deg, var(--accent), var(--accent) 3px, transparent 3px, transparent 12px
+      );
+    }
+
+    /* Card */
+    .card-dark {
+      background: #1a1a1a;
+      border: 1.5px solid #333;
+    }
+    .card-dark:hover { border-color: #555; }
+
+    /* Tag */
+    .tag { font-family:'Space Mono',monospace; font-size:0.65rem; letter-spacing:0.12em; text-transform:uppercase; border:1.5px solid currentColor; padding:2px 8px; }
+
+    /* Field */
+    .field {
+      background: #0d0d0d;
+      border: 1.5px solid #333;
+      color: #f5f0e8;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.85rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      border-radius: 0;
+      width: 100%;
+    }
+    .field:focus { border-color: var(--accent2); box-shadow: 0 0 0 2px rgba(0,71,255,0.2); }
+    .field::placeholder { color: #444; }
+
+    /* Brutalist buttons */
+    .btn {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      border: 1.5px solid;
+      transition: all 0.15s;
+    }
+    .btn-orange {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+    .btn-orange:hover { background: #e03d00; box-shadow: 0 0 20px rgba(255,77,0,0.4); }
+    .btn-blue {
+      background: var(--accent2);
+      border-color: var(--accent2);
+      color: white;
+    }
+    .btn-blue:hover { background: #0038cc; box-shadow: 0 0 20px rgba(0,71,255,0.4); }
+    .btn-ghost {
+      background: transparent;
+      border-color: #444;
+      color: #aaa;
+    }
+    .btn-ghost:hover { border-color: #f5f0e8; color: #f5f0e8; }
+    .btn:disabled { opacity:0.4; cursor:not-allowed; }
+
+    /* Textarea special */
+    #raw-test {
+      resize: vertical;
+      min-height: 240px;
+      font-size: 0.78rem;
+      line-height: 1.7;
+    }
+
+    /* Room ID display */
+    .room-badge {
+      background: var(--accent);
+      color: white;
+      font-family: 'Space Mono', monospace;
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: 0.3em;
+      text-align: center;
+      padding: 16px;
+    }
+
+    /* Table */
+    .results-table { width: 100%; border-collapse: collapse; }
+    .results-table th {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #666;
+      padding: 10px 14px;
+      border-bottom: 1px solid #222;
+      text-align: left;
+    }
+    .results-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid #1e1e1e;
+      font-size: 0.9rem;
+    }
+    .results-table tr:hover td { background: #1e1e1e; }
+
+    /* Score pill */
+    .score-pill {
+      display: inline-block;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 2px 10px;
+      border-radius: 999px;
+    }
+
+    /* Tabs */
+    .tab-btn {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 8px 16px;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      color: #666;
+      background: none;
+      border-top: none;
+      border-left: none;
+      border-right: none;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .tab-btn.active { color: #f5f0e8; border-bottom-color: var(--accent); }
+    .tab-btn:hover:not(.active) { color: #aaa; }
+
+    /* Fade */
+    @keyframes fadeIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+    .fade-in { animation: fadeIn 0.4s cubic-bezier(.22,1,.36,1) both; }
+
+    /* Sidebar layout */
+    .layout { display: grid; grid-template-columns: 260px 1fr; min-height: calc(100vh - 57px); }
+    @media(max-width:768px) { .layout { grid-template-columns: 1fr; } .sidebar { display: none; } }
+
+    .sidebar {
+      border-right: 1px solid #222;
+      padding: 24px 16px;
+    }
+
+    /* Toggle sections */
+    .section { display: none; }
+    .section.active { display: block; }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header style="border-bottom:1px solid #222;position:sticky;top:0;z-index:50;background:#111">
+    <div class="max-w-7xl mx-auto px-6 py-3.5 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-6 h-6 stripe-h"></div>
+        <span class="font-black text-lg tracking-tight">QUIZ<span style="color:var(--accent)">ROOM</span></span>
+        <span class="tag ml-2" style="color:#555">Admin</span>
+      </div>
+      <div class="flex items-center gap-4">
+        <span id="header-room-id" class="mono text-xs hidden" style="color:var(--accent)"></span>
+        <a href="/" class="btn btn-ghost text-xs px-4 py-2">← Talaba</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="layout max-w-7xl mx-auto w-full" style="position:relative;z-index:1">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <p class="mono text-xs mb-6" style="color:#444;letter-spacing:0.1em;text-transform:uppercase">Menu</p>
+      <nav class="flex flex-col gap-1">
+        <button onclick="switchTab('create')" class="tab-side active" id="side-create">
+          <span class="mr-2">＋</span> Test Yaratish
+        </button>
+        <button onclick="switchTab('results')" class="tab-side" id="side-results">
+          <span class="mr-2">◈</span> Natijalar
+        </button>
+      </nav>
+
+      <!-- Quick stats -->
+      <div class="mt-8 pt-6" style="border-top:1px solid #1e1e1e">
+        <p class="mono text-xs mb-3" style="color:#444;letter-spacing:0.1em;text-transform:uppercase">Joriy Xona</p>
+        <div id="side-room-info" class="text-xs mono" style="color:#555">Xona yaratilmagan</div>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="p-8">
+
+      <!-- === CREATE TAB === -->
+      <div id="tab-create" class="section active fade-in">
+        <div class="flex items-baseline gap-4 mb-8">
+          <h1 class="text-2xl font-black">Yangi Test Yaratish</h1>
+          <span class="tag" style="color:var(--accent)">Admin</span>
+        </div>
+
+        <!-- Auth warning -->
+        <div id="auth-warning" class="card-dark p-4 mb-6 flex items-start gap-3" style="border-color:rgba(255,77,0,0.4)">
+          <span style="font-size:1.2rem">🔐</span>
+          <div>
+            <p class="font-bold text-sm mb-1">Admin paroli talab qilinadi</p>
+            <p class="text-xs mono" style="color:#666">Har bir so'rovda parol tekshiriladi</p>
+          </div>
+        </div>
+
+        <div class="grid gap-6 mb-6" style="grid-template-columns:1fr 1fr 1fr">
+          <div>
+            <label class="block mb-2 mono text-xs tracking-widest uppercase" style="color:#666">Xona Nomi</label>
+            <input id="room-name" class="field px-4 py-3" placeholder="Biologiya — 9-sinf" />
+          </div>
+          <div>
+            <label class="block mb-2 mono text-xs tracking-widest uppercase" style="color:#666">Admin Paroli</label>
+            <input id="admin-pass" type="password" class="field px-4 py-3" placeholder="••••••••" />
+          </div>
+          <div class="flex items-end">
+            <button onclick="createRoom()" id="btn-create" class="btn btn-orange w-full py-3 text-sm">
+              ▶ Xona Ochish
+            </button>
+          </div>
+        </div>
+
+        <!-- Test input -->
+        <div class="mb-6">
+          <div class="flex items-center justify-between mb-2">
+            <label class="mono text-xs tracking-widest uppercase" style="color:#666">Test Matni (raw format)</label>
+            <button onclick="insertSample()" class="btn btn-ghost text-xs px-3 py-1">Namuna</button>
+          </div>
+          <textarea id="raw-test" class="field px-4 py-3" placeholder="Savol: ...
+A: ...
+B: ...
+C: ...
+D: ...
+Javob: A
+---
+Savol: ..."></textarea>
+          <p class="mt-2 text-xs mono" style="color:#444">Savollarni <code style="background:#1e1e1e;padding:1px 6px">---</code> bilan ajrating</p>
+        </div>
+
+        <!-- Result: room created -->
+        <div id="create-success" class="hidden fade-in">
+          <div class="card-dark p-6" style="border-color:rgba(0,165,80,0.4)">
+            <div class="flex items-center gap-3 mb-4">
+              <span style="font-size:1.4rem">✅</span>
+              <div>
+                <p class="font-bold">Xona muvaffaqiyatli yaratildi!</p>
+                <p class="text-xs mono" style="color:#666">Quyidagi kodni talabalar bilan ulashing</p>
+              </div>
+            </div>
+            <div class="room-badge mb-4 tracking-[0.4em]" id="created-room-id">—</div>
+            <div class="flex gap-3">
+              <button onclick="copyRoomId()" class="btn btn-ghost text-xs px-4 py-2">📋 Nusxa</button>
+              <button onclick="switchTab('results')" class="btn btn-blue text-xs px-4 py-2">Natijalarni Ko'rish →</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="create-error" class="hidden mono text-sm py-3" style="color:var(--accent)"></div>
+      </div>
+
+      <!-- === RESULTS TAB === -->
+      <div id="tab-results" class="section fade-in">
+        <div class="flex items-baseline gap-4 mb-8">
+          <h1 class="text-2xl font-black">Natijalar</h1>
+        </div>
+
+        <!-- Lookup form -->
+        <div class="card-dark p-6 mb-8">
+          <div class="grid gap-4 mb-4" style="grid-template-columns:1fr 1fr 1fr">
+            <div>
+              <label class="block mb-2 mono text-xs tracking-widest uppercase" style="color:#666">Xona ID</label>
+              <input id="res-room-id" class="field px-4 py-3 uppercase" placeholder="A1B2C3" maxlength="6" />
+            </div>
+            <div>
+              <label class="block mb-2 mono text-xs tracking-widest uppercase" style="color:#666">Admin Paroli</label>
+              <input id="res-pass" type="password" class="field px-4 py-3" placeholder="••••••••" />
+            </div>
+            <div class="flex items-end">
+              <button onclick="loadResults()" class="btn btn-blue w-full py-3 text-sm">◈ Ko'rish</button>
+            </div>
+          </div>
+          <div id="res-error" class="hidden mono text-sm" style="color:var(--accent)"></div>
+        </div>
+
+        <!-- Results table -->
+        <div id="results-container" class="hidden fade-in">
+          <!-- Summary -->
+          <div id="results-summary" class="grid gap-4 mb-6" style="grid-template-columns:repeat(3,1fr)"></div>
+
+          <!-- Table -->
+          <div class="card-dark overflow-hidden">
+            <div class="px-6 py-4 flex items-center justify-between" style="border-bottom:1px solid #222">
+              <span class="font-bold text-sm">Ishtirokchilar</span>
+              <span id="participants-count" class="tag" style="color:#666"></span>
+            </div>
+            <div style="overflow-x:auto">
+              <table class="results-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Ism</th>
+                    <th>Ball</th>
+                    <th>Foiz</th>
+                    <th>Baho</th>
+                  </tr>
+                </thead>
+                <tbody id="results-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div id="results-empty" class="hidden text-center py-20">
+          <p class="text-4xl mb-4">📭</p>
+          <p class="font-bold mb-2">Natijalar topilmadi</p>
+          <p class="text-sm mono" style="color:#555">Hali hech kim test topshirmagan</p>
+        </div>
+      </div>
+
+      <!-- FOOTER / CREATOR CONTACT -->
+<footer style="border-top:1px solid #222;margin-top:40px;padding:24px 0">
+  <div class="flex flex-col items-center justify-center gap-2 text-center">
+
+    <p class="mono text-xs mb-2"
+       style="color:#666;letter-spacing:0.1em;text-transform:uppercase">
+      Ishlab chiqaruvchi
+    </p>
+
+    <a href="mailto:fanwaguriservant@gmail.com"
+       class="tag"
+       style="color:var(--accent);border-color:var(--accent);cursor:pointer;text-decoration:none;display:inline-block;padding:8px 12px;">
+      📧 fanwaguriservant@gmail.com
+    </a>
+
+    <p class="text-xs mt-4"
+       style="color:#555;font-family:'Space Mono',monospace">
+      © 2026 Abduazim • <span style="color:var(--accent)">QUIZROOM</span>
+    </p>
+
+    <p class="text-xs"
+       style="color:#444;font-size:0.7rem">
+      Barcha huquqlar muallif himoyasiga olingan
+    </p>
+
+  </div>
+</footer>
+
+    </main>
+  </div>
+
+  <style>
+    .tab-side {
+      text-align: left;
+      padding: 10px 12px;
+      width: 100%;
+      font-family: 'Syne', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #555;
+      background: none;
+      border: none;
+      cursor: pointer;
+      border-left: 2px solid transparent;
+      transition: color 0.15s, border-color 0.15s, background 0.15s;
+    }
+    .tag:hover { border-color: #ff6633; color: #ff6633; }
+    .tab-side:hover { color: #ccc; background: #1a1a1a; }
+    .tab-side.active { color: #f5f0e8; border-left-color: var(--accent); background: #1a1a1a; }
+    .stat-card { background:#1a1a1a; border:1px solid #222; padding:16px 20px; }
+    .stat-card:hover { border-color:#333; }
+  </style>
+
+  <script>
+    let createdRoomId = '';
+
+    function switchTab(tab) {
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.tab-side').forEach(b => b.classList.remove('active'));
+      document.getElementById('tab-' + tab).classList.add('active');
+      document.getElementById('side-' + tab).classList.add('active');
+    }
+
+    function insertSample() {
+      document.getElementById('raw-test').value =
+`Savol: O'zbekistonning poytaxti qaysi shahar?
+A: Samarqand
+B: Toshkent
+C: Buxoro
+D: Namangan
+Javob: B
+---
+Savol: Quyosh sistemasidagi eng katta sayyora?
+A: Yer
+B: Saturn
+C: Yupiter
+D: Mars
+Javob: C
+---
+Savol: Suvning kimyoviy formulasi?
+A: CO2
+B: NaCl
+C: H2O
+D: O2
+Javob: C`;
+    }
+
+    async function createRoom() {
+      const name = document.getElementById('room-name').value.trim();
+      const raw  = document.getElementById('raw-test').value.trim();
+      const pass = document.getElementById('admin-pass').value.trim();
+      const errEl = document.getElementById('create-error');
+      const btn = document.getElementById('btn-create');
+
+      document.getElementById('create-success').classList.add('hidden');
+      errEl.classList.add('hidden');
+
+      if (!name || !raw || !pass) { showErr(errEl, '⚠ Barcha maydonlarni to\'ldiring'); return; }
+
+      btn.disabled = true;
+      btn.textContent = 'Yuklanmoqda...';
+
+      try {
+        const res = await fetch('/api/admin/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, raw_test: raw, password: pass })
+        });
+        const data = await res.json();
+
+        if (data.error) { showErr(errEl, '⚠ ' + data.error); return; }
+
+        createdRoomId = data.room_id;
+        document.getElementById('created-room-id').textContent = data.room_id;
+        document.getElementById('create-success').classList.remove('hidden');
+        document.getElementById('header-room-id').textContent = data.room_id;
+        document.getElementById('header-room-id').classList.remove('hidden');
+        document.getElementById('side-room-info').innerHTML =
+          `<span style="color:#f5f0e8;font-weight:700">${data.room_id}</span><br/><span style="color:#555">${name}</span>`;
+
+        // Pre-fill results tab
+        document.getElementById('res-room-id').value = data.room_id;
+        document.getElementById('res-pass').value = pass;
+      } catch(e) {
+        showErr(errEl, '⚠ Server xatosi: ' + e.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '▶ Xona Ochish';
+      }
+    }
+
+    async function loadResults() {
+      const roomId = document.getElementById('res-room-id').value.trim().toUpperCase();
+      const pass   = document.getElementById('res-pass').value.trim();
+      const errEl  = document.getElementById('res-error');
+
+      errEl.classList.add('hidden');
+      document.getElementById('results-container').classList.add('hidden');
+      document.getElementById('results-empty').classList.add('hidden');
+
+      if (!roomId || !pass) { showErr(errEl, '⚠ Xona ID va parol kiriting'); return; }
+
+      try {
+        const res = await fetch(`/api/admin/results/${roomId}?password=${encodeURIComponent(pass)}`);
+        const data = await res.json();
+
+        if (data.error) { showErr(errEl, '⚠ ' + data.error); return; }
+
+        if (!data.length) { document.getElementById('results-empty').classList.remove('hidden'); return; }
+
+        renderResults(data, roomId);
+        document.getElementById('results-container').classList.remove('hidden');
+      } catch(e) {
+        showErr(errEl, '⚠ Yuklashda xato');
+      }
+    }
+
+    function renderResults(data, roomId) {
+      // Sort by score desc
+      const sorted = [...data].sort((a,b) => (b.score/b.total) - (a.score/a.total));
+      const total = data[0].total;
+
+      // Summary stats
+      const avg = data.reduce((s,r) => s + r.score, 0) / data.length;
+      const max = Math.max(...data.map(r => r.score));
+      const passing = data.filter(r => r.score/r.total >= 0.6).length;
+
+      document.getElementById('results-summary').innerHTML = `
+        <div class="stat-card">
+          <p class="mono text-xs mb-1" style="color:#555">O'RTACHA BALL</p>
+          <p class="text-2xl font-black" style="font-family:'Space Mono',monospace">${avg.toFixed(1)}<span class="text-sm font-normal" style="color:#555">/${total}</span></p>
+        </div>
+        <div class="stat-card">
+          <p class="mono text-xs mb-1" style="color:#555">ENG YUQORI</p>
+          <p class="text-2xl font-black" style="font-family:'Space Mono',monospace">${max}<span class="text-sm font-normal" style="color:#555">/${total}</span></p>
+        </div>
+        <div class="stat-card">
+          <p class="mono text-xs mb-1" style="color:#555">O'TDI (≥60%)</p>
+          <p class="text-2xl font-black" style="font-family:'Space Mono',monospace">${passing}<span class="text-sm font-normal" style="color:#555">/${data.length}</span></p>
+        </div>
+      `;
+
+      document.getElementById('participants-count').textContent = `${data.length} ishtirokchi`;
+
+      const tbody = document.getElementById('results-tbody');
+      tbody.innerHTML = sorted.map((r, i) => {
+        const pct = Math.round((r.score / r.total) * 100);
+        const color = pct >= 85 ? '#00a550' : pct >= 60 ? '#0047ff' : '#ff4d00';
+        const grade = pct >= 85 ? '⭐ A' : pct >= 70 ? '👍 B' : pct >= 60 ? '📘 C' : '📉 D';
+        const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '';
+        return `<tr>
+          <td class="mono text-xs" style="color:#444">${i+1} ${medal}</td>
+          <td class="font-semibold">${escHtml(r.user)}</td>
+          <td class="mono font-bold" style="color:${color}">${r.score}/${r.total}</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="width:80px;height:4px;background:#222;border-radius:2px">
+                <div style="width:${pct}%;height:100%;background:${color};border-radius:2px;transition:width 0.6s"></div>
+              </div>
+              <span class="mono text-xs" style="color:#888">${pct}%</span>
+            </div>
+          </td>
+          <td><span class="score-pill" style="background:${color}22;color:${color}">${grade}</span></td>
+        </tr>`;
+      }).join('');
+    }
+
+    function copyRoomId() {
+      navigator.clipboard.writeText(createdRoomId).then(() => {
+        const btn = event.target;
+        btn.textContent = '✓ Nusxalandi!';
+        setTimeout(() => btn.textContent = '📋 Nusxa', 1800);
+      });
+    }
+
+    function showErr(el, msg) {
+      el.textContent = msg;
+      el.classList.remove('hidden');
+    }
+
+    function escHtml(str) {
+      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+  </script>
+</body>
+</html>
